@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Procesamiento Multinúcleo v4 — Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     HEADER
+═════════════════════════════════════════════════════════════ -->
+<header>
+  <div class="brand">
+    <span>⚡ Procesamiento Multinúcleo</span>
+    <span class="version-badge">v4.0</span>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:18px;">
+    <span id="stateBadge" class="state-badge idle">● Inactivo</span>
+    <div class="conn-indicator">
+      <span class="conn-dot" id="connDot"></span>
+      <span id="connLabel">Desconectado</span>
+    </div>
+  </div>
+</header>
+
+
+<!-- ════════════════════════════════════════════════════════
+     LAYOUT PRINCIPAL
+═════════════════════════════════════════════════════════════ -->
+<div class="layout">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+  <aside class="sidebar">
+
+    <!-- Sistema -->
+    <div class="panel">
+      <div class="panel-title">Sistema</div>
+      <div class="sys-info">
+        <div class="sys-row">
+          <span class="sys-key">Núcleos</span>
+          <span class="sys-val" id="sysCores">—</span>
+        </div>
+        <div class="sys-row">
+          <span class="sys-key">Pillow</span>
+          <span class="sys-val" id="sysPillow">—</span>
+        </div>
+        <div class="sys-row">
+          <span class="sys-key">psutil</span>
+          <span class="sys-val" id="sysPsutil">—</span>
+        </div>
+        <div class="sys-row">
+          <span class="sys-key">CPU total</span>
+          <span class="sys-val" id="cpuTotal">0%</span>
+        </div>
+        <div class="mini-bar-track">
+          <div class="mini-bar-fill" id="cpuTotalBar" style="width:0%"></div>
+        </div>
+        <div class="sys-row" style="margin-top:6px">
+          <span class="sys-key">RAM</span>
+          <span class="sys-val" id="ramInfo">—</span>
+        </div>
+        <div class="mini-bar-track">
+          <div class="mini-bar-fill" id="ramBar" style="width:0%; background:var(--purple)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controles -->
+    <div class="panel">
+      <div class="panel-title">Controles</div>
+
+      <!-- Workers -->
+      <div class="control-group">
+        <label>Workers (procesos)</label>
+        <div class="worker-row">
+          <input type="range" id="workerSlider" min="1" max="16" value="4" />
+          <span class="worker-val" id="workerVal">4</span>
+        </div>
+      </div>
+
+      <!-- Tamaño redimensión -->
+      <div class="control-group">
+        <label>Tamaño redimensión</label>
+        <select id="resizeSelect">
+          <option value="320x240">Pequeño (320×240)</option>
+          <option value="640x480">Mediano (640×480)</option>
+          <option value="800x600" selected>Estándar (800×600)</option>
+          <option value="1280x720">HD (1280×720)</option>
+          <option value="1920x1080">Full HD (1920×1080)</option>
+        </select>
+      </div>
+
+      <!-- Operaciones -->
+      <div class="control-group">
+        <label>Operaciones a aplicar</label>
+        <div class="op-list">
+          <label class="op-item">
+            <input type="checkbox" id="opBlur" checked />
+            <span class="op-name">Blur</span>
+            <span class="op-badge">filtro</span>
+          </label>
+          <label class="op-item">
+            <input type="checkbox" id="opGrises" checked />
+            <span class="op-name">Escala de Grises</span>
+            <span class="op-badge">color</span>
+          </label>
+          <label class="op-item">
+            <input type="checkbox" id="opResize" checked />
+            <span class="op-name">Redimensionar</span>
+            <span class="op-badge">batch</span>
+          </label>
+          <label class="op-item">
+            <input type="checkbox" id="opSharpen" />
+            <span class="op-name">Sharpen</span>
+            <span class="op-badge">filtro</span>
+          </label>
+          <label class="op-item">
+            <input type="checkbox" id="opContorno" />
+            <span class="op-name">Contornos</span>
+            <span class="op-badge">análisis</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <button class="btn btn-start" id="btnStart">▶ Iniciar Procesamiento</button>
+      <div style="height:8px"></div>
+      <button class="btn btn-stop" id="btnStop" disabled>■ Detener</button>
+    </div>
+
+  </aside>
+
+
+  <!-- ══ ÁREA PRINCIPAL ════════════════════════════════════ -->
+  <div class="main-area">
+
+    <!-- Métricas resumen -->
+    <div class="metrics-row">
+      <div class="metric-card green">
+        <div class="m-label">Speedup</div>
+        <div class="m-value" id="mSpeedup">—</div>
+        <div class="m-sub">proceso paralelo</div>
+      </div>
+      <div class="metric-card blue">
+        <div class="m-label">Eficiencia</div>
+        <div class="m-value" id="mEfficiency">—</div>
+        <div class="m-sub">uso de núcleos</div>
+      </div>
+      <div class="metric-card orange">
+        <div class="m-label">Tiempo total</div>
+        <div class="m-value" id="mTime">—</div>
+        <div class="m-sub">segundos</div>
+      </div>
+      <div class="metric-card purple">
+        <div class="m-label">Imágenes</div>
+        <div class="m-value" id="mImages">0 / 0</div>
+        <div class="m-sub">procesadas</div>
+      </div>
+    </div>
+
+    <!-- Progreso -->
+    <div class="panel">
+      <div class="panel-title">Progreso</div>
+      <div class="progress-section">
+        <div class="progress-header">
+          <span class="progress-label" id="progressLabel">En espera...</span>
+          <span class="progress-counter" id="progressCounter">0 / 0</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+        <div class="progress-file" id="progressFile">Ningún archivo en proceso</div>
+      </div>
+    </div>
+
+    <!-- CPU por núcleo -->
+    <div class="panel">
+      <div class="panel-title">Uso de CPU por Núcleo</div>
+      <div class="cpu-grid" id="cpuGrid">
+        <!-- Generado por JS -->
+        <div style="color:var(--text-muted); font-size:12px; padding:10px 0">
+          Conectando al servidor...
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultados + Logs -->
+    <div class="bottom-area">
+
+      <!-- Tabla de resultados -->
+      <div class="panel" style="overflow:hidden">
+        <div class="panel-title">Resultados por Imagen</div>
+        <div class="results-scroll">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Archivo</th>
+                <th>Operaciones</th>
+                <th>Antes</th>
+                <th>Después</th>
+                <th>Tiempo</th>
+                <th>Worker</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody">
+              <tr>
+                <td colspan="6" style="color:var(--text-muted); text-align:center; padding:20px">
+                  Sin resultados aún — inicia el procesamiento
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Consola de logs -->
+      <div class="log-console">
+        <div class="log-header">
+          <span class="log-title">📋 Consola de Logs</span>
+          <button class="log-clear" id="btnClearLog">Limpiar</button>
+        </div>
+        <div class="log-body" id="logBody">
+          <div class="log-entry info">
+            <span class="log-ts">--:--:--</span>
+            <span class="log-msg">Esperando conexión con el servidor...</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /bottom-area -->
+  </div><!-- /main-area -->
+
+</div><!-- /layout -->
+
+<footer>
+  Proyecto Multinúcleo · Versión 4.0 · DAM-2 · Programación de Servicios y Procesos
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
