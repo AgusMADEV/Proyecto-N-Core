@@ -1,0 +1,54 @@
+El Procesamiento Paralelo en Python
+
+El procesamiento paralelo es una técnica fundamental en la programación moderna que permite ejecutar múltiples tareas simultáneamente. Python ofrece varias bibliotecas para implementar paralelismo, siendo multiprocessing una de las más populares.
+
+¿Qué es el Procesamiento Paralelo?
+
+El procesamiento paralelo es la capacidad de un sistema para realizar múltiples operaciones al mismo tiempo. En lugar de ejecutar tareas una tras otra (secuencialmente), el procesamiento paralelo divide el trabajo entre varios núcleos del procesador, permitiendo que se ejecuten simultáneamente.
+
+Ventajas del Procesamiento Paralelo
+
+1. Mayor velocidad: Al distribuir el trabajo entre múltiples núcleos, se reduce significativamente el tiempo de procesamiento.
+
+2. Mejor uso de recursos: Los procesadores modernos tienen múltiples núcleos que pueden estar inactivos si solo se ejecuta código secuencial.
+
+3. Escalabilidad: Las aplicaciones paralelas pueden aprovechar procesadores con más núcleos sin modificar el código.
+
+4. Eficiencia energética: Completar tareas más rápido puede reducir el consumo total de energía.
+
+Módulo multiprocessing en Python
+
+El módulo multiprocessing es la biblioteca estándar de Python para procesamiento paralelo. A diferencia de threading, que se ve limitado por el GIL (Global Interpreter Lock), multiprocessing crea procesos separados, cada uno con su propio intérprete de Python y espacio de memoria.
+
+Características principales:
+
+- Pool de procesos: Permite distribuir trabajo entre múltiples procesos de manera sencilla.
+- Comunicación entre procesos: Ofrece Queue y Pipe para compartir datos.
+- Sincronización: Proporciona Lock, Semaphore y otros mecanismos.
+- Procesos independientes: Cada proceso tiene su propio espacio de memoria.
+
+Casos de Uso Ideales
+
+El procesamiento paralelo es especialmente útil en:
+
+- Procesamiento de grandes volúmenes de datos
+- Cálculos científicos y matemáticos complejos
+- Procesamiento de imágenes y video
+- Análisis de texto a gran escala
+- Simulaciones y modelado
+- Machine learning y análisis de datos
+
+Conceptos Clave
+
+CPU-bound vs I/O-bound:
+- CPU-bound: Tareas limitadas por la velocidad del procesador (cálculos matemáticos).
+- I/O-bound: Tareas limitadas por operaciones de entrada/salida (lectura de archivos, red).
+
+El procesamiento paralelo es más efectivo para tareas CPU-bound.
+
+Speedup y Eficiencia:
+El speedup mide cuánto más rápido es el código paralelo comparado con el secuencial. Idealmente, con N núcleos tendríamos un speedup de N veces, pero factores como la comunicación entre procesos y la sincronización reducen este valor.
+
+Conclusión
+
+El procesamiento paralelo es una herramienta poderosa que todo programador moderno debe conocer. Python facilita su implementación a través de bibliotecas bien diseñadas que permiten aprovechar al máximo el hardware disponible.

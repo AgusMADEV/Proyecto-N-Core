@@ -1,197 +1,229 @@
 """
-COMPARADOR DE RENDIMIENTO
-=========================
-Este script ejecuta ambas versiones (secuencial y paralela) 
-y compara los resultados para mostrar claramente la mejora de rendimiento.
+COMPARADOR VERSIÓN 2 - PROCESAMIENTO DE ARCHIVOS
+================================================
+Este script compara el rendimiento entre el procesamiento SECUENCIAL
+y PARALELO de archivos de texto.
+
+Permite visualizar claramente las ventajas del multinúcleo.
 """
 
 import time
 import multiprocessing
 from datetime import datetime
+from pathlib import Path
+import os
 
 
-# ==================== FUNCIONES COMPARTIDAS ====================
-
-def es_primo(n):
-    """Verifica si un número es primo"""
-    if n < 2:
-        return False
-    if n == 2:
-        return True
-    if n % 2 == 0:
-        return False
-    for i in range(3, int(n ** 0.5) + 1, 2):
-        if n % i == 0:
-            return False
-    return True
+# Importar funciones de ambas versiones
+from secuencial import analizar_archivo as analizar_secuencial
+from paralelo import analizar_archivo as analizar_paralelo
 
 
-def encontrar_divisores(n):
-    """Encuentra todos los divisores de un número"""
-    divisores = []
-    for i in range(1, n + 1):
-        if n % i == 0:
-            divisores.append(i)
-    return divisores
+def ejecutar_prueba_secuencial(archivos):
+    """
+    Ejecuta el procesamiento secuencial de archivos.
+    
+    Args:
+        archivos: Lista de rutas de archivos
+    
+    Returns:
+        Tupla (resultados, tiempo_total)
+    """
+    print("\n" + "="*70)
+    print("🐌 EJECUTANDO VERSIÓN SECUENCIAL")
+    print("="*70)
+    print(f"📊 Archivos: {len(archivos)}")
+    print(f"🖥️  Modo: UN SOLO NÚCLEO")
+    print("="*70 + "\n")
+    
+    inicio = time.time()
+    resultados = []
+    
+    for i, archivo in enumerate(archivos, 1):
+        print(f"🔄 Procesando {i}/{len(archivos)}: {os.path.basename(archivo)}")
+        resultado = analizar_secuencial(archivo)
+        resultados.append(resultado)
+        
+        if resultado['exito']:
+            print(f"  ✅ {resultado['num_palabras']} palabras | "
+                  f"{resultado['num_lineas']} líneas | {resultado['tiempo_proceso']:.3f}s\n")
+    
+    tiempo_total = time.time() - inicio
+    
+    return resultados, tiempo_total
 
 
-def procesar_numero_simple(n):
-    """Versión simplificada para procesamiento (sin prints)"""
-    primo = es_primo(n)
-    divisores = encontrar_divisores(n)
+def ejecutar_prueba_paralelo(archivos, num_procesos=None):
+    """
+    Ejecuta el procesamiento paralelo de archivos.
+    
+    Args:
+        archivos: Lista de rutas de archivos
+        num_procesos: Número de procesos (None = todos los núcleos)
+    
+    Returns:
+        Tupla (resultados, tiempo_total)
+    """
+    if num_procesos is None:
+        num_procesos = multiprocessing.cpu_count()
+    
+    print("\n" + "="*70)
+    print("🚀 EJECUTANDO VERSIÓN PARALELA")
+    print("="*70)
+    print(f"📊 Archivos: {len(archivos)}")
+    print(f"🖥️  Núcleos disponibles: {multiprocessing.cpu_count()}")
+    print(f"⚙️  Procesos a usar: {num_procesos}")
+    print("="*70 + "\n")
+    
+    inicio = time.time()
+    
+    with multiprocessing.Pool(processes=num_procesos) as pool:
+        resultados = pool.map(analizar_paralelo, archivos)
+    
+    tiempo_total = time.time() - inicio
+    
+    return resultados, tiempo_total
+
+
+def calcular_metricas(tiempo_secuencial, tiempo_paralelo, num_procesos):
+    """
+    Calcula métricas de rendimiento comparativo.
+    
+    Args:
+        tiempo_secuencial: Tiempo de ejecución secuencial
+        tiempo_paralelo: Tiempo de ejecución paralela
+        num_procesos: Número de procesos utilizados
+    
+    Returns:
+        Diccionario con las métricas
+    """
+    speedup = tiempo_secuencial / tiempo_paralelo
+    eficiencia = (speedup / num_procesos) * 100
+    reduccion_tiempo = ((tiempo_secuencial - tiempo_paralelo) / tiempo_secuencial) * 100
+    
     return {
-        'numero': n,
-        'es_primo': primo,
-        'cantidad_divisores': len(divisores)
+        'speedup': speedup,
+        'eficiencia': eficiencia,
+        'reduccion_tiempo': reduccion_tiempo
     }
 
 
-# ==================== VERSIÓN SECUENCIAL ====================
-
-def procesar_secuencial(numeros):
-    """Procesa números de forma secuencial"""
-    resultados = []
-    for numero in numeros:
-        resultado = procesar_numero_simple(numero)
-        resultados.append(resultado)
-    return resultados
-
-
-# ==================== VERSIÓN PARALELA ====================
-
-def procesar_paralelo(numeros):
-    """Procesa números en paralelo usando multiprocessing"""
-    num_nucleos = multiprocessing.cpu_count()
-    with multiprocessing.Pool(processes=num_nucleos) as pool:
-        resultados = pool.map(procesar_numero_simple, numeros)
-    return resultados
-
-
-# ==================== COMPARACIÓN ====================
-
-def comparar_rendimiento(numeros):
+def mostrar_comparacion(tiempo_sec, tiempo_par, metricas, archivos_sec, archivos_par):
     """
-    Ejecuta ambas versiones y compara los resultados
-    
-    Args:
-        numeros: Lista de números a procesar
+    Muestra una comparación visual de los resultados.
     """
-    num_nucleos = multiprocessing.cpu_count()
+    print("\n" + "="*70)
+    print("📊 COMPARACIÓN DE RENDIMIENTO")
+    print("="*70)
     
-    print("\n" + "🎯"*30)
-    print("     COMPARADOR DE RENDIMIENTO - MULTINÚCLEO vs SECUENCIAL")
-    print("🎯"*30)
-    print(f"\n📅 Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-    print(f"🖥️  Núcleos disponibles en tu procesador: {num_nucleos}")
-    print(f"📊 Números a procesar: {len(numeros)}")
-    print(f"🔢 Números: {numeros}")
+    # Información de archivos procesados
+    exitos_sec = sum(1 for r in archivos_sec if r['exito'])
+    exitos_par = sum(1 for r in archivos_par if r['exito'])
     
-    # ==================== PRUEBA 1: SECUENCIAL ====================
-    print("\n" + "="*60)
-    print("🐌 PRUEBA 1: PROCESAMIENTO SECUENCIAL")
-    print("="*60)
-    print("⏳ Procesando...")
+    print(f"\n✅ Archivos procesados correctamente:")
+    print(f"   Secuencial: {exitos_sec}/{len(archivos_sec)}")
+    print(f"   Paralelo:   {exitos_par}/{len(archivos_par)}")
     
-    tiempo_inicio_sec = time.time()
-    resultados_sec = procesar_secuencial(numeros)
-    tiempo_sec = time.time() - tiempo_inicio_sec
+    # Estadísticas totales
+    if exitos_sec > 0:
+        total_palabras_sec = sum(r['num_palabras'] for r in archivos_sec if r['exito'])
+        total_lineas_sec = sum(r['num_lineas'] for r in archivos_sec if r['exito'])
+        
+        print(f"\n📝 Total de palabras procesadas: {total_palabras_sec:,}")
+        print(f"📄 Total de líneas procesadas: {total_lineas_sec:,}")
     
-    print(f"✅ Completado en {tiempo_sec:.2f} segundos")
-    primos_sec = sum(1 for r in resultados_sec if r['es_primo'])
-    print(f"✨ Números primos encontrados: {primos_sec}")
-    
-    # ==================== PRUEBA 2: PARALELO ====================
-    print("\n" + "="*60)
-    print("🚀 PRUEBA 2: PROCESAMIENTO PARALELO (MULTINÚCLEO)")
-    print("="*60)
-    print("⏳ Procesando...")
-    
-    tiempo_inicio_par = time.time()
-    resultados_par = procesar_paralelo(numeros)
-    tiempo_par = time.time() - tiempo_inicio_par
-    
-    print(f"✅ Completado en {tiempo_par:.2f} segundos")
-    primos_par = sum(1 for r in resultados_par if r['es_primo'])
-    print(f"✨ Números primos encontrados: {primos_par}")
-    
-    # ==================== COMPARACIÓN Y ANÁLISIS ====================
-    print("\n" + "="*60)
-    print("📊 ANÁLISIS COMPARATIVO")
-    print("="*60)
-    
+    # Tiempos
     print(f"\n⏱️  TIEMPOS DE EJECUCIÓN:")
-    print(f"   • Secuencial:  {tiempo_sec:.2f} segundos")
-    print(f"   • Paralelo:    {tiempo_par:.2f} segundos")
+    print(f"   Secuencial:  {tiempo_sec:.2f} segundos")
+    print(f"   Paralelo:    {tiempo_par:.2f} segundos")
     
-    if tiempo_sec > tiempo_par:
-        mejora = ((tiempo_sec - tiempo_par) / tiempo_sec) * 100
-        aceleracion = tiempo_sec / tiempo_par
-        print(f"\n🎉 MEJORA DE RENDIMIENTO:")
-        print(f"   • Reducción de tiempo: {mejora:.1f}%")
-        print(f"   • Aceleración: {aceleracion:.2f}x más rápido")
-        print(f"   • Tiempo ahorrado: {tiempo_sec - tiempo_par:.2f} segundos")
+    # Métricas
+    print(f"\n🚀 MÉTRICAS DE RENDIMIENTO:")
+    print(f"   Speedup:     {metricas['speedup']:.2f}x más rápido")
+    print(f"   Eficiencia:  {metricas['eficiencia']:.1f}%")
+    print(f"   Reducción:   {metricas['reduccion_tiempo']:.1f}% menos tiempo")
+    
+    # Visualización
+    print(f"\n📈 VISUALIZACIÓN:")
+    barra_sec = "█" * int(tiempo_sec * 2)
+    barra_par = "█" * int(tiempo_par * 2)
+    
+    print(f"   Secuencial: {barra_sec} {tiempo_sec:.2f}s")
+    print(f"   Paralelo:   {barra_par} {tiempo_par:.2f}s")
+    
+    # Interpretación
+    print(f"\n💡 INTERPRETACIÓN:")
+    if metricas['speedup'] >= 3:
+        print(f"   ✨ Excelente mejora de rendimiento!")
+    elif metricas['speedup'] >= 2:
+        print(f"   👍 Buena mejora de rendimiento")
+    elif metricas['speedup'] >= 1.5:
+        print(f"   ✓ Mejora moderada de rendimiento")
     else:
-        print(f"\n⚠️  El procesamiento paralelo fue más lento")
-        print(f"   Esto puede ocurrir con pocas tareas o números pequeños")
-        print(f"   El overhead de crear procesos supera el beneficio")
+        print(f"   ⚠️  Mejora limitada (posible overhead o archivos pequeños)")
     
-    print(f"\n🖥️  USO DEL PROCESADOR:")
-    print(f"   • Núcleos disponibles: {num_nucleos}")
-    print(f"   • Núcleos usados (secuencial): 1")
-    print(f"   • Núcleos usados (paralelo): {num_nucleos}")
-    print(f"   • Aprovechamiento: {num_nucleos}x más CPU")
-    
-    print(f"\n📈 EFICIENCIA:")
-    eficiencia = (aceleracion / num_nucleos) * 100 if tiempo_sec > tiempo_par else 0
-    print(f"   • Eficiencia teórica máxima: {num_nucleos}x")
-    print(f"   • Eficiencia real: {aceleracion:.2f}x")
-    print(f"   • Porcentaje de eficiencia: {eficiencia:.1f}%")
-    print(f"   • Overhead del paralelismo: {100 - eficiencia:.1f}%")
-    
-    print("\n" + "="*60)
-    print("💡 CONCLUSIONES")
-    print("="*60)
-    if mejora > 30:
-        print("✅ El procesamiento paralelo es SIGNIFICATIVAMENTE más rápido")
-        print("✅ Ideal para procesar grandes cantidades de datos")
-        print("✅ Aprovecha eficientemente los múltiples núcleos")
-    elif mejora > 10:
-        print("✔️  El procesamiento paralelo es más rápido")
-        print("✔️  Hay margen de mejora en la eficiencia")
-    else:
-        print("⚠️  El beneficio del paralelismo es limitado")
-        print("💡 Considera aumentar el tamaño del problema")
-        print("💡 El overhead de crear procesos afecta el rendimiento")
-    
-    print("\n" + "="*60 + "\n")
+    print("="*70 + "\n")
 
 
 def main():
-    """Función principal"""
+    """
+    Función principal del comparador.
+    """
+    print("\n" + "="*70)
+    print("🔬 COMPARADOR DE RENDIMIENTO - PROCESAMIENTO DE ARCHIVOS")
+    print("="*70)
+    print(f"📅 Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"🖥️  Sistema: {multiprocessing.cpu_count()} núcleos detectados")
+    print("="*70)
     
-    # Lista de números a procesar
-    # Números grandes para que el procesamiento sea más intensivo
-    numeros = [
-        15485863,  # Primo grande
-        15485867,  # No primo
-        15485917,  # No primo
-        15485923,  # Primo
-        15485933,  # Primo
-        15485941,  # No primo
-        15485951,  # No primo
-        15485959,  # Primo
-    ]
+    # Buscar archivos
+    carpeta_datos = Path(__file__).parent / "datos_ejemplo"
     
-    comparar_rendimiento(numeros)
+    if not carpeta_datos.exists():
+        print(f"\n❌ Error: La carpeta 'datos_ejemplo' no existe.")
+        print("Por favor, ejecuta primero secuencial.py o paralelo.py")
+        return
     
-    print("✅ Comparación finalizada\n")
-    print("💡 TIPS:")
-    print("   • Añade más números para ver mayor diferencia de rendimiento")
-    print("   • Usa números más grandes para procesos más intensivos")
-    print("   • La mejora es proporcional al número de núcleos disponibles")
-    print()
+    archivos_txt = list(carpeta_datos.glob("*.txt"))
+    
+    if not archivos_txt:
+        print(f"\n❌ Error: No se encontraron archivos .txt en '{carpeta_datos}'")
+        return
+    
+    archivos_txt = [str(archivo) for archivo in archivos_txt]
+    
+    print(f"\n📂 Archivos encontrados: {len(archivos_txt)}")
+    for archivo in archivos_txt:
+        tamanio_kb = os.path.getsize(archivo) / 1024
+        print(f"   - {os.path.basename(archivo)} ({tamanio_kb:.2f} KB)")
+    
+    # Ejecutar pruebas
+    print("\n" + "="*70)
+    print("🏃 INICIANDO PRUEBAS COMPARATIVAS")
+    print("="*70)
+    
+    # Prueba secuencial
+    resultados_sec, tiempo_sec = ejecutar_prueba_secuencial(archivos_txt)
+    
+    # Pequeña pausa entre pruebas
+    time.sleep(1)
+    
+    # Prueba paralela
+    num_procesos = multiprocessing.cpu_count()
+    resultados_par, tiempo_par = ejecutar_prueba_paralelo(archivos_txt, num_procesos)
+    
+    # Calcular métricas
+    metricas = calcular_metricas(tiempo_sec, tiempo_par, num_procesos)
+    
+    # Mostrar comparación
+    mostrar_comparacion(tiempo_sec, tiempo_par, metricas, resultados_sec, resultados_par)
+    
+    # Guardar resultados
+    print("💾 Los resultados se han mostrado en consola")
+    print("\n" + "="*70)
+    print("✅ COMPARACIÓN COMPLETADA")
+    print("="*70 + "\n")
 
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
     main()

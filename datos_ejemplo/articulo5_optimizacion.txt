@@ -1,0 +1,199 @@
+Optimización de Código Python
+
+La optimización de código es el proceso de mejorar el rendimiento de un programa haciéndolo más rápido, más eficiente en memoria, o ambos. En Python, hay múltiples estrategias para lograr código más eficiente.
+
+Reglas de Oro de la Optimización
+
+1. No optimices prematuramente
+"La optimización prematura es la raíz de todos los males" - Donald Knuth. Primero haz que funcione, luego haz que sea correcto, finalmente hazlo rápido.
+
+2. Mide antes de optimizar
+Usa profilers para identificar cuellos de botella reales antes de invertir tiempo en optimización.
+
+3. El código legible es valioso
+No sacrifiques legibilidad por pequeñas ganancias de rendimiento a menos que sea necesario.
+
+Herramientas de Profiling
+
+cProfile
+Profiler integrado de Python que mide el tiempo de ejecución de funciones.
+
+line_profiler
+Analiza el rendimiento línea por línea.
+
+memory_profiler
+Mide el uso de memoria de tu código.
+
+timeit
+Módulo para medir tiempo de ejecución de pequeños fragmentos de código.
+
+Técnicas de Optimización
+
+Usar Estructuras de Datos Apropiadas
+
+Listas vs Sets vs Diccionarios:
+- Búsqueda en lista: O(n)
+- Búsqueda en set: O(1)
+- Búsqueda en diccionario: O(1)
+
+Para búsquedas frecuentes, sets y diccionarios son mucho más rápidos.
+
+List Comprehensions
+
+Las comprensiones de listas son más rápidas que bucles equivalentes:
+- Más rápido: [x*2 for x in range(1000)]
+- Más lento: list con append en bucle
+
+Generadores
+
+Usan memoria de forma eficiente al generar valores bajo demanda:
+- sum(x*2 for x in range(1000000)) usa menos memoria que sum([x*2 for x in range(1000000)])
+
+Funciones Built-in
+
+Las funciones integradas de Python están optimizadas en C:
+- map(), filter(), sum(), max(), min()
+- Generalmente más rápidas que implementaciones en Python puro
+
+Evitar Búsquedas Globales
+
+Las variables locales son más rápidas de acceder que las globales. Asigna funciones frecuentemente usadas a variables locales.
+
+NumPy para Operaciones Numéricas
+
+NumPy usa arrays optimizados y operaciones vectorizadas que son mucho más rápidas que listas de Python para cálculos numéricos.
+
+Caché y Memoización
+
+Usar functools.lru_cache para cachear resultados de funciones costosas:
+
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def funcion_costosa(n):
+    # cálculos complejos
+    return resultado
+
+String Building
+
+Para concatenar muchos strings:
+- Más rápido: ''.join(lista_strings)
+- Más lento: concatenación repetida con +
+
+Avoiding Function Call Overhead
+
+Las llamadas a funciones tienen overhead. Para código crítico en rendimiento, considera inlining de funciones pequeñas.
+
+Optimización de Bucles
+
+- Mueve cálculos invariantes fuera del bucle
+- Reduce llamadas a funciones dentro del bucle
+- Usa enumerate() en lugar de range(len())
+- Considera reemplazar bucles anidados con operaciones vectorizadas
+
+Uso Eficiente de Memoria
+
+Iteradores y Generadores
+Procesa datos en streaming en lugar de cargar todo en memoria.
+
+__slots__ en Clases
+Reduce memoria en clases con muchas instancias.
+
+del para Liberar Memoria
+Elimina referencias a objetos grandes cuando ya no se necesiten.
+
+Compilación y Alternativas
+
+PyPy
+Implementación alternativa de Python con JIT compiler que puede ser mucho más rápida.
+
+Cython
+Compila Python a C para ganancias significativas de velocidad.
+
+Numba
+JIT compiler para funciones numéricas con decorador simple.
+
+Paralelización
+
+multiprocessing
+Para tareas CPU-bound, distribuir trabajo entre núcleos.
+
+concurrent.futures
+API de alto nivel para ejecución paralela y asíncrona.
+
+asyncio
+Para operaciones I/O-bound, programación asíncrona.
+
+Optimización de Algoritmos
+
+La mayor ganancia suele venir de elegir el algoritmo correcto:
+
+- Búsqueda binaria O(log n) vs búsqueda lineal O(n)
+- QuickSort O(n log n) vs Bubble Sort O(n²)
+- Usar tablas hash para acceso rápido
+- Programación dinámica para evitar recálculos
+
+Benchmarking
+
+Siempre compara el rendimiento antes y después de optimizar:
+
+import timeit
+
+tiempo = timeit.timeit('funcion()', setup='from __main__ import funcion', number=1000)
+print(f'Tiempo promedio: {tiempo/1000:.6f} segundos')
+
+Consideraciones Importantes
+
+Trade-offs
+Optimización a menudo implica compensaciones entre velocidad, memoria y legibilidad.
+
+Bottlenecks Reales
+80% del tiempo se gasta en 20% del código. Encuentra y optimiza ese 20%.
+
+Plataforma y Contexto
+El código puede comportarse diferente en diferentes sistemas.
+
+Mantenibilidad
+Código altamente optimizado puede ser difícil de mantener.
+
+Casos de Estudio
+
+Procesamiento de Archivos Grandes
+Usar generadores para procesar línea por línea en lugar de cargar todo el archivo.
+
+Cálculos Científicos
+NumPy y SciPy son ordenes de magnitud más rápidos que Python puro.
+
+Web Scraping
+asyncio con aiohttp para hacer múltiples requests simultáneos.
+
+Procesamiento de Imágenes
+Pillow con operaciones vectorizadas y procesamiento en batch.
+
+Errores Comunes
+
+- Optimizar código que no es cuello de botella
+- Usar try/except para control de flujo normal
+- Concatenar strings en bucles
+- No usar with para manejo de recursos
+- Ignorar la complejidad algorítmica
+
+Mejores Prácticas
+
+1. Escribe código claro primero
+2. Mide para encontrar problemas reales
+3. Optimiza los cuellos de botella identificados
+4. Prueba que la optimización funciona
+5. Documenta por qué se hizo la optimización
+6. Mantén versiones no optimizadas para referencia
+
+Recursos y Herramientas
+
+- PyCharm Profiler
+- Visual Studio Code con extensiones de profiling
+- Jupyter notebooks con %%timeit
+- pytest-benchmark para tests de rendimiento
+
+Conclusión
+
+La optimización es tanto arte como ciencia. Requiere entender el problema, medir cuidadosamente, aplicar técnicas apropiadas y validar los resultados. Python ofrece numerosas herramientas y técnicas para hacer código eficiente sin sacrificar su legibilidad característica.
