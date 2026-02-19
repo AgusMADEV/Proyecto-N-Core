@@ -169,8 +169,13 @@ function updateStatus(data) {
   serverState = data.state || "idle";
 
   // Badge de estado
-  const labels = { idle: "● Inactivo", running: "⟳ Procesando", stopping: "■ Deteniendo" };
-  DOM.stateBadge.textContent  = labels[serverState] || serverState;
+  const labels = { idle: "Inactivo", running: "Procesando", stopping: "Deteniendo" };
+  const badgeText = DOM.stateBadge.querySelector('.badge-text');
+  if (badgeText) {
+    badgeText.textContent = labels[serverState] || serverState;
+  } else {
+    DOM.stateBadge.textContent = labels[serverState] || serverState;
+  }
   DOM.stateBadge.className    = "state-badge " + serverState;
 
   // Botones
@@ -189,13 +194,16 @@ function updateStatus(data) {
     buildCoreCards(data.cpu_count);
   }
 
+  const svgOK  = `<svg style="vertical-align:-2px;margin-right:4px" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const svgFail = `<svg style="vertical-align:-2px;margin-right:4px" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+
   if (data.pillow !== undefined) {
-    DOM.sysPillow.textContent = data.pillow ? "✅ OK" : "❌ No";
+    DOM.sysPillow.innerHTML   = data.pillow ? svgOK + "OK" : svgFail + "No";
     DOM.sysPillow.style.color = data.pillow ? "var(--green)" : "var(--red)";
   }
 
   if (data.psutil !== undefined) {
-    DOM.sysPsutil.textContent = data.psutil  ? "✅ OK" : "❌ No";
+    DOM.sysPsutil.innerHTML   = data.psutil  ? svgOK + "OK" : svgFail + "No";
     DOM.sysPsutil.style.color = data.psutil  ? "var(--green)" : "var(--red)";
   }
 }
